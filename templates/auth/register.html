@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - MediCloud Share{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="card">
+        <div class="auth-header">
+            <h1>Create Account</h1>
+            <p>Set up your patient portal for secure file storage</p>
+        </div>
+
+        <form action="{{ url_for('auth.register') }}" method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    class="form-control" 
+                    value="{{ username or '' }}" 
+                    placeholder="Choose a username (e.g. john_doe)" 
+                    required 
+                    autofocus
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    value="{{ email or '' }}" 
+                    placeholder="e.g. john@example.com" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-control" 
+                    placeholder="At least 6 characters" 
+                    minlength="6" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirm_password" 
+                    name="confirm_password" 
+                    class="form-control" 
+                    placeholder="Re-enter your password" 
+                    minlength="6" 
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">
+                Register
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #64748b;">
+            Already have an account? 
+            <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600;">Sign in here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

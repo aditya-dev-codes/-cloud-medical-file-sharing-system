@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Report: {{ report['original_filename'] }} - MediCloud Share{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2>📄 {{ report['original_filename'] }}</h2>
+        <p style="color: var(--gray-medium); font-size: 0.95rem;">
+            Uploaded on {{ report['uploaded_at'] }} &bull; Format: {{ report['file_type'] }}
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('reports.download_report', report_id=report['id']) }}" target="_blank" class="btn btn-primary">
+            📥 View / Download Original File
+        </a>
+        <form action="{{ url_for('reports.delete_report', report_id=report['id']) }}" method="POST" onsubmit="return confirm('Delete this report permanently?');">
+            <button type="submit" class="btn btn-danger">
+                🗑️ Delete Report
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="disclaimer-box">
+    <strong>Prototype Notice:</strong> Document stored securely in local/cloud storage abstraction. Access restricted to owner session.
+</div>
+
+<!-- Metadata & Storage Details -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Document Metadata</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div>
+            <span style="font-size: 0.85rem; color: var(--gray-medium); display: block;">File Name</span>
+            <strong>{{ report['original_filename'] }}</strong>
+        </div>
+        <div>
+            <span style="font-size: 0.85rem; color: var(--gray-medium); display: block;">Document Type</span>
+            <span style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.85rem;">
+                {{ report['file_type'] }}
+            </span>
+        </div>
+        <div>
+            <span style="font-size: 0.85rem; color: var(--gray-medium); display: block;">File Size</span>
+            <strong>{{ (report['file_size'] / 1024)|round(1) }} KB</strong>
+        </div>
+        <div>
+            <span style="font-size: 0.85rem; color: var(--gray-medium); display: block;">Storage ID</span>
+            <code style="font-size: 0.82rem; color: var(--gray-dark);">{{ report['filename'] }}</code>
+        </div>
+    </div>
+</div>
+
+<!-- AI Summary Section -->
+<div class="card" style="border-top: 3px solid #6366f1;">
+    <div class="card-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <h3 class="card-title" style="color: #4338ca;">🤖 AI-Powered Medical Summary</h3>
+            {% if ai_summary %}
+                {% if ai_summary['is_mock'] %}
+                    <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-weight: 600;">
+                        Local Mock AI
+                    </span>
+                {% else %}
+                    <span style="font-size: 0.75rem; background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 4px; font-weight: 600;">
+                        Live Gemini AI
+                    </span>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div>
+            <form action="{{ url_for('reports.summarize_report', report_id=report['id']) }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn btn-primary btn-sm" style="background-color: #6366f1; border-color: #4f46e5;">
+                    {% if ai_summary %}🔄 Regenerate AI Summary{% else %}✨ Generate AI Summary{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mandatory Medical Guardrail Banner -->
+    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid var(--warning); padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1.25rem; font-size: 0.85rem; color: #92400e;">
+        <strong>Clinical Notice:</strong> AI-generated summary — verify against the original report. The AI does not diagnose diseases, recommend treatment, prescribe medicines, or make medical decisions.
+    </div>
+
+    {% if ai_summary %}
+        <!-- Formatted Summary Content -->
+        <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 1.25rem; margin-bottom: 1.25rem; white-space: pre-line; line-height: 1.7; font-family: inherit; font-size: 0.95rem;">
+            {{ ai_summary['summary_text'] }}
+        </div>
+
+        <!-- Structured Key Medical Facts -->
+        <h4 style="font-size: 0.95rem; color: var(--dark); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+            Key Medical Facts Extracted From Document:
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+            <div style="background: #f1f5f9; padding: 0.85rem; border-radius: 6px; border-top: 3px solid var(--primary);">
+                <strong style="display: block; font-size: 0.85rem; color: var(--dark); margin-bottom: 0.35rem;">
+                    🩺 Conditions / Diagnoses:
+                </strong>
+                <span style="font-size: 0.9rem; color: var(--gray-dark);">
+                    {{ ai_summary['extracted_conditions'] or 'None recorded' }}
+                </span>
+            </div>
+
+            <div style="background: #fef2f2; padding: 0.85rem; border-radius: 6px; border-top: 3px solid #ef4444;">
+                <strong style="display: block; font-size: 0.85rem; color: #b91c1c; margin-bottom: 0.35rem;">
+                    ⚠️ Allergies Documented:
+                </strong>
+                <span style="font-size: 0.9rem; color: #991b1b; font-weight: 500;">
+                    {{ ai_summary['extracted_allergies'] or 'None recorded' }}
+                </span>
+            </div>
+
+            <div style="background: #f0fdf4; padding: 0.85rem; border-radius: 6px; border-top: 3px solid var(--success);">
+                <strong style="display: block; font-size: 0.85rem; color: #166534; margin-bottom: 0.35rem;">
+                    💊 Medications Noted:
+                </strong>
+                <span style="font-size: 0.9rem; color: #14532d;">
+                    {{ ai_summary['extracted_medications'] or 'None recorded' }}
+                </span>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; font-size: 0.85rem; color: var(--gray-medium);">
+            Generated on: {{ ai_summary['created_at'] }} &bull; Source file: 
+            <a href="{{ url_for('reports.download_report', report_id=report['id']) }}" target="_blank" style="color: var(--primary); text-decoration: underline;">
+                {{ report['original_filename'] }}
+            </a>
+        </div>
+    {% else %}
+        <!-- Empty State Prompting User to Generate Summary -->
+        <div style="background: #f8fafc; border: 2px dashed var(--gray-light); border-radius: 6px; padding: 2.25rem 1.5rem; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🤖</div>
+            <h4 style="color: var(--dark); margin-bottom: 0.4rem;">No AI Summary Generated Yet</h4>
+            <p style="color: var(--gray-medium); font-size: 0.92rem; max-width: 520px; margin: 0 auto 1.25rem auto;">
+                Click below to extract clinical text from this {{ report['file_type'] }} report and generate a concise summary highlighting diagnoses, allergies, and medications.
+            </p>
+            <form action="{{ url_for('reports.summarize_report', report_id=report['id']) }}" method="POST" style="display: inline-block;">
+                <button type="submit" class="btn btn-primary" style="background-color: #6366f1; border-color: #4f46e5;">
+                    ✨ Extract & Generate AI Summary Now
+                </button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+
+<div style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <a href="{{ url_for('reports.list_reports') }}" class="btn btn-outline">
+        &larr; Back to Reports List
+    </a>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline">
+        Dashboard
+    </a>
+</div>
+{% endblock %}

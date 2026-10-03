@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Medical Profile - MediCloud Share{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <h2>Edit Patient Medical Profile</h2>
+    <p style="color: var(--gray-medium); font-size: 0.95rem;">
+        Keep vital medical facts updated for emergency accessibility.
+    </p>
+</div>
+
+<div class="card">
+    <form action="{{ url_for('profile.edit') }}" method="POST">
+        <!-- Identity & Vitals Section -->
+        <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 1rem; border-bottom: 1px solid var(--gray-light); padding-bottom: 0.5rem;">
+            1. Identity & Physical Data
+        </h3>
+
+        <div class="form-row">
+            <div class="form-group form-col">
+                <label for="full_name">Full Legal Name</label>
+                <input 
+                    type="text" 
+                    id="full_name" 
+                    name="full_name" 
+                    class="form-control" 
+                    value="{{ profile['full_name'] if profile and profile['full_name'] else '' }}" 
+                    placeholder="e.g. Johnathan Doe"
+                >
+            </div>
+
+            <div class="form-group form-col">
+                <label for="date_of_birth">Date of Birth</label>
+                <input 
+                    type="date" 
+                    id="date_of_birth" 
+                    name="date_of_birth" 
+                    class="form-control" 
+                    value="{{ profile['date_of_birth'] if profile and profile['date_of_birth'] else '' }}"
+                >
+            </div>
+
+            <div class="form-group form-col">
+                <label for="blood_group">Blood Group</label>
+                <select id="blood_group" name="blood_group" class="form-control">
+                    <option value="">Select Blood Group</option>
+                    {% for bg in blood_groups %}
+                        <option value="{{ bg }}" {% if profile and profile['blood_group'] == bg %}selected{% endif %}>
+                            {{ bg }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Emergency Contact Section -->
+        <h3 style="font-size: 1.1rem; color: var(--danger); margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--gray-light); padding-bottom: 0.5rem;">
+            2. Emergency Contact
+        </h3>
+
+        <div class="form-row">
+            <div class="form-group form-col">
+                <label for="emergency_contact_name">Contact Person Full Name</label>
+                <input 
+                    type="text" 
+                    id="emergency_contact_name" 
+                    name="emergency_contact_name" 
+                    class="form-control" 
+                    value="{{ profile['emergency_contact_name'] if profile and profile['emergency_contact_name'] else '' }}" 
+                    placeholder="e.g. Mary Doe (Spouse/Parent)"
+                >
+            </div>
+
+            <div class="form-group form-col">
+                <label for="emergency_contact_phone">Contact Phone Number</label>
+                <input 
+                    type="tel" 
+                    id="emergency_contact_phone" 
+                    name="emergency_contact_phone" 
+                    class="form-control" 
+                    value="{{ profile['emergency_contact_phone'] if profile and profile['emergency_contact_phone'] else '' }}" 
+                    placeholder="e.g. +1 (555) 019-2834"
+                >
+            </div>
+        </div>
+
+        <!-- Clinical Details Section -->
+        <h3 style="font-size: 1.1rem; color: var(--primary); margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--gray-light); padding-bottom: 0.5rem;">
+            3. Clinical Summary
+        </h3>
+
+        <div class="form-group">
+            <label for="allergies" style="color: #b91c1c; font-weight: 600;">Known Allergies (Crucial for Emergency Care)</label>
+            <textarea 
+                id="allergies" 
+                name="allergies" 
+                class="form-control" 
+                placeholder="e.g. Penicillin (severe anaphylaxis), Peanuts, Latex, Aspirin"
+            >{{ profile['allergies'] if profile and profile['allergies'] else '' }}</textarea>
+            <small style="color: var(--gray-medium);">List medication, food, or substance allergies with reaction severity if known.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="current_medications">Current Daily Medications</label>
+            <textarea 
+                id="current_medications" 
+                name="current_medications" 
+                class="form-control" 
+                placeholder="e.g. Metformin 500mg (twice daily), Lisinopril 10mg (once morning)"
+            >{{ profile['current_medications'] if profile and profile['current_medications'] else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="existing_conditions">Existing Chronic Diseases / Conditions</label>
+            <textarea 
+                id="existing_conditions" 
+                name="existing_conditions" 
+                class="form-control" 
+                placeholder="e.g. Type 2 Diabetes, Hypertension, Asthma"
+            >{{ profile['existing_conditions'] if profile and profile['existing_conditions'] else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="previous_surgeries">Previous Surgeries / Significant Procedures</label>
+            <textarea 
+                id="previous_surgeries" 
+                name="previous_surgeries" 
+                class="form-control" 
+                placeholder="e.g. Appendectomy (2018), Knee Arthroscopy (2021)"
+            >{{ profile['previous_surgeries'] if profile and profile['previous_surgeries'] else '' }}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary">
+                💾 Save Medical Profile
+            </button>
+            <a href="{{ url_for('profile.view') }}" class="btn btn-outline">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

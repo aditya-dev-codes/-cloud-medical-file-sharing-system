@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Medical Profile - MediCloud Share{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+        <h2>Patient Medical Profile</h2>
+        <p style="color: var(--gray-medium); font-size: 0.95rem;">
+            Personal health details for critical care and emergency situations.
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('profile.edit') }}" class="btn btn-primary">
+            ✏️ Edit Profile
+        </a>
+    </div>
+</div>
+
+<div class="disclaimer-box">
+    <strong>Educational Prototype Notice:</strong> Use only fictional sample data. This information is intended for college demonstration of emergency medical access.
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <!-- Basic Information & Emergency Contact -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Identity & Vitals</h3>
+            </div>
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th style="width: 40%;">Full Name</th>
+                        <td>{{ profile['full_name'] if profile and profile['full_name'] else 'Not specified' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date of Birth</th>
+                        <td>{{ profile['date_of_birth'] if profile and profile['date_of_birth'] else 'Not specified' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Blood Group</th>
+                        <td>
+                            {% if profile and profile['blood_group'] %}
+                                <span style="background: #e0f2fe; color: #0369a1; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 1rem;">
+                                    🩸 {{ profile['blood_group'] }}
+                                </span>
+                            {% else %}
+                                <span style="color: var(--gray-medium);">Not set</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--danger);">
+            <div class="card-header">
+                <h3 class="card-title" style="color: var(--danger);">🚨 Emergency Contact</h3>
+            </div>
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th style="width: 40%;">Contact Name</th>
+                        <td><strong>{{ profile['emergency_contact_name'] if profile and profile['emergency_contact_name'] else 'Not specified' }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Contact Phone</th>
+                        <td>
+                            {% if profile and profile['emergency_contact_phone'] %}
+                                <a href="tel:{{ profile['emergency_contact_phone'] }}" style="color: var(--primary); font-weight: 600;">
+                                    📞 {{ profile['emergency_contact_phone'] }}
+                                </a>
+                            {% else %}
+                                <span style="color: var(--gray-medium);">Not set</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Clinical Details -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Clinical History & Medications</h3>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label style="font-weight: 600; color: #b91c1c;">⚠️ Known Allergies</label>
+                <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: 0.75rem; font-size: 0.95rem;">
+                    {{ profile['allergies'] if profile and profile['allergies'] else 'None reported or not specified.' }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label style="font-weight: 600; color: var(--dark);">💊 Current Medications</label>
+                <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 0.75rem; font-size: 0.95rem;">
+                    {{ profile['current_medications'] if profile and profile['current_medications'] else 'None reported or not specified.' }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label style="font-weight: 600; color: var(--dark);">🩺 Existing Medical Conditions</label>
+                <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 0.75rem; font-size: 0.95rem;">
+                    {{ profile['existing_conditions'] if profile and profile['existing_conditions'] else 'None reported.' }}
+                </div>
+            </div>
+
+            <div>
+                <label style="font-weight: 600; color: var(--dark);">🏥 Previous Surgeries / Treatments</label>
+                <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 0.75rem; font-size: 0.95rem;">
+                    {{ profile['previous_surgeries'] if profile and profile['previous_surgeries'] else 'None reported.' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 1rem;">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline">
+        &larr; Back to Dashboard
+    </a>
+</div>
+{% endblock %}

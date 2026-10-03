@@ -1,0 +1,46 @@
+======================================================================
+METROPOLITAN GENERAL HOSPITAL - CLINICAL LABORATORY REPORT
+======================================================================
+Patient Name: Alex Morgan
+Patient ID: PT-98214
+Date of Birth: 14-May-1998
+Date of Examination: 28-Sep-2026
+Attending Physician: Dr. Robert Vance, M.D. (Internal Medicine)
+Department: Endocrinology & Primary Care
+
+PATIENT MEDICAL HISTORY & PRESENTING COMPLAINTS:
+Patient is a 28-year-old presenting for routine 6-month management of 
+previously diagnosed Type 2 Diabetes Mellitus and mild Essential Hypertension. 
+Patient reports intermittent chest tightness on extreme exertion.
+
+KNOWN ALLERGIES:
+- Severe anaphylactic allergy to Penicillin and Beta-lactam antibiotics.
+- Moderate urticaria / skin allergy to Peanuts and tree nuts.
+
+CURRENT MEDICATIONS:
+- Metformin Hydrochloride 500mg PO twice daily with meals.
+- Lisinopril 10mg PO once daily in the morning.
+- Atorvastatin 20mg PO once daily at bedtime.
+- Salbutamol / Albuterol Inhaler (100mcg) 2 puffs PRN for mild wheezing.
+
+PREVIOUS SURGERIES & PROCEDURES:
+- Emergency Open Appendectomy (2020) without post-operative complications.
+- Left knee arthroscopic meniscectomy (2018).
+
+LABORATORY INVESTIGATION RESULTS:
+1. Fasting Blood Glucose: 138 mg/dL (Reference: 70 - 99 mg/dL) [HIGH]
+2. Hemoglobin A1c (HbA1c): 7.2 % (Reference: < 5.7 %) [ELEVATED - Suboptimal glycemic control]
+3. Total Serum Cholesterol: 195 mg/dL (Reference: < 200 mg/dL) [NORMAL]
+4. Serum Creatinine: 0.9 mg/dL (Reference: 0.7 - 1.2 mg/dL) [NORMAL]
+5. Blood Pressure Reading: 132/84 mmHg [STAGE 1 HYPERTENSION]
+
+PHYSICIAN CLINICAL ASSESSMENT & PLAN:
+1. Suboptimally controlled Type 2 Diabetes Mellitus with elevated HbA1c.
+2. Controlled essential hypertension on current Lisinopril regimen.
+3. Recommend lifestyle dietary modifications and continue Metformin 500mg BID.
+4. Absolute avoidance of Penicillin-class antibiotics due to documented anaphylaxis risk.
+5. Follow up in 3 months with repeat HbA1c and metabolic panel.
+
+Report Certified By: Dr. Robert Vance, M.D.
+License No: MD-449102-GEN
+======================================================================

@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}Emergency Profile - MediCloud Share{% endblock %}
+
+{% block content %}
+<!-- Emergency Header Banner with Print Action -->
+<div style="background: #991b1b; color: #ffffff; padding: 1.25rem 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <span style="background: #ffffff; color: #991b1b; font-weight: 800; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                Prototype View
+            </span>
+            <span style="font-size: 0.85rem; opacity: 0.9;">Emergency Physician / Paramedic Quick-Access</span>
+        </div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; margin: 0;">
+            🚨 EMERGENCY MEDICAL PROFILE
+        </h1>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <button onclick="window.print()" class="btn btn-sm" style="background: #ffffff; color: #991b1b; font-weight: 700;">
+            🖨️ Print Emergency Card
+        </button>
+        <a href="{{ url_for('emergency.index') }}" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: #ffffff;">
+            &larr; Exit View
+        </a>
+    </div>
+</div>
+
+<!-- Mandatory Prototype Clinical Disclaimer -->
+<div style="background: #fffbeb; border-left: 4px solid var(--warning); padding: 0.85rem 1.2rem; border-radius: 4px; margin-bottom: 1.5rem; font-size: 0.85rem; color: #92400e;">
+    <strong>College Prototype Notice:</strong> For demonstration purposes only using sample patient data. All AI summaries must be verified against original medical records. The AI does not diagnose, prescribe, or provide treatment advice.
+</div>
+
+<!-- Section 1: Patient Identity & Critical Emergency Vitals -->
+<div class="card" style="border-top: 4px solid #b91c1c;">
+    <div class="card-header">
+        <h3 class="card-title">1. Patient Identification & Critical Vitals</h3>
+        <span style="font-size: 0.85rem; color: var(--gray-medium);">Patient Record: #{{ profile['user_id'] if profile else 'N/A' }}</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; align-items: center;">
+        <div>
+            <span style="font-size: 0.82rem; color: var(--gray-medium); text-transform: uppercase;">Patient Legal Name</span>
+            <div style="font-size: 1.3rem; font-weight: 700; color: var(--dark);">
+                {{ profile['full_name'] if profile and profile['full_name'] else 'Unknown / Not Set' }}
+            </div>
+        </div>
+
+        <div>
+            <span style="font-size: 0.82rem; color: var(--gray-medium); text-transform: uppercase;">Date of Birth</span>
+            <div style="font-size: 1.1rem; font-weight: 600; color: var(--dark);">
+                {{ profile['date_of_birth'] if profile and profile['date_of_birth'] else 'Not Specified' }}
+            </div>
+        </div>
+
+        <div>
+            <span style="font-size: 0.82rem; color: var(--gray-medium); text-transform: uppercase;">Blood Group (Critical)</span>
+            <div>
+                {% if profile and profile['blood_group'] %}
+                    <span style="display: inline-block; background: #fee2e2; color: #991b1b; font-weight: 900; font-size: 1.35rem; padding: 4px 14px; border-radius: 6px; border: 2px solid #f87171;">
+                        🩸 {{ profile['blood_group'] }}
+                    </span>
+                {% else %}
+                    <span style="color: var(--danger); font-weight: 600;">UNKNOWN</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Immediate Alerts (Allergies & Emergency Contacts) -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    
+    <!-- Red Alert Box: Allergies -->
+    <div class="card" style="border: 2px solid #ef4444; background: #fffcfc; margin-bottom: 0;">
+        <div class="card-header" style="border-bottom-color: #fecaca;">
+            <h3 class="card-title" style="color: #b91c1c; display: flex; align-items: center; gap: 0.4rem;">
+                ⚠️ CRITICAL ALLERGIES
+            </h3>
+            <span class="emergency-badge">High Priority</span>
+        </div>
+        
+        <div style="font-size: 1rem; color: #7f1d1d; line-height: 1.6; font-weight: 600;">
+            {% if profile and profile['allergies'] %}
+                {{ profile['allergies'] }}
+            {% else %}
+                <span style="color: var(--gray-medium); font-weight: normal;">No drug allergies documented by patient.</span>
+            {% endif %}
+        </div>
+        <p style="font-size: 0.78rem; color: #991b1b; margin-top: 0.85rem;">
+            * Verify before administering penicillin, cephalosporins, NSAIDs, or contrast dyes.
+        </p>
+    </div>
+
+    <!-- Emergency Contacts Card -->
+    <div class="card" style="border-left: 4px solid var(--primary); margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title" style="color: var(--primary);">📞 Emergency Contacts</h3>
+        </div>
+
+        <div>
+            <strong style="display: block; font-size: 1.05rem; color: var(--dark);">
+                {{ profile['emergency_contact_name'] if profile and profile['emergency_contact_name'] else 'No contact person set' }}
+            </strong>
+            {% if profile and profile['emergency_contact_phone'] %}
+                <div style="margin-top: 0.5rem;">
+                    <a href="tel:{{ profile['emergency_contact_phone'] }}" class="btn btn-outline btn-sm" style="color: var(--primary); font-weight: 700; font-size: 1rem;">
+                        📞 Call {{ profile['emergency_contact_phone'] }}
+                    </a>
+                </div>
+            {% else %}
+                <span style="color: var(--gray-medium); font-size: 0.9rem;">No emergency phone configured.</span>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Section 3: Clinical Background & Current Regimen -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">2. Ongoing Clinical Regimen & Medical History</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div>
+            <strong style="display: block; color: var(--dark); font-size: 0.9rem; margin-bottom: 0.35rem;">
+                💊 Current Daily Medications:
+            </strong>
+            <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 0.75rem; font-size: 0.92rem; min-height: 60px;">
+                {{ profile['current_medications'] if profile and profile['current_medications'] else 'None reported.' }}
+            </div>
+        </div>
+
+        <div>
+            <strong style="display: block; color: var(--dark); font-size: 0.9rem; margin-bottom: 0.35rem;">
+                🩺 Existing Chronic Conditions:
+            </strong>
+            <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 0.75rem; font-size: 0.92rem; min-height: 60px;">
+                {{ profile['existing_conditions'] if profile and profile['existing_conditions'] else 'None reported.' }}
+            </div>
+        </div>
+
+        <div>
+            <strong style="display: block; color: var(--dark); font-size: 0.9rem; margin-bottom: 0.35rem;">
+                🏥 Previous Surgeries / Procedures:
+            </strong>
+            <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 0.75rem; font-size: 0.92rem; min-height: 60px;">
+                {{ profile['previous_surgeries'] if profile and profile['previous_surgeries'] else 'None reported.' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 4: AI Medical Summaries from Stored Reports -->
+<div class="card" style="border-top: 3px solid #6366f1;">
+    <div class="card-header">
+        <h3 class="card-title" style="color: #4338ca;">3. AI-Extracted Report Summaries</h3>
+        <span style="font-size: 0.85rem; color: var(--gray-medium);">
+            {{ summaries|length }} Document Summary Available
+        </span>
+    </div>
+
+    {% if summaries %}
+        {% for summary in summaries %}
+            <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 6px; padding: 1.25rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--gray-light); padding-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <strong>📄 Document: {{ summary['original_filename'] }} ({{ summary['file_type'] }})</strong>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-weight: 600;">
+                            {% if summary['is_mock'] %}Local Mock AI{% else %}Live Gemini AI{% endif %}
+                        </span>
+                        <a href="{{ url_for('reports.download_report', report_id=summary['report_id']) }}" target="_blank" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">
+                            📥 View Ground-Truth File
+                        </a>
+                    </div>
+                </div>
+
+                <div style="white-space: pre-line; font-size: 0.9rem; line-height: 1.6; color: var(--dark);">
+                    {{ summary['summary_text'] }}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="background: #f8fafc; border: 1px dashed var(--gray-light); border-radius: 6px; padding: 1.5rem; text-align: center; color: var(--gray-medium);">
+            No report summaries generated yet. Upload reports and generate AI summaries to populate this section.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Section 5: Available Ground-Truth Medical Documents -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">4. Available Medical Documents on Cloud</h3>
+    </div>
+
+    {% if reports %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Type</th>
+                        <th>Size</th>
+                        <th>Upload Date</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                        <tr>
+                            <td><strong>{{ report['original_filename'] }}</strong></td>
+                            <td><span style="text-transform: uppercase; font-size: 0.8rem;">{{ report['file_type'] }}</span></td>
+                            <td>{{ (report['file_size'] / 1024)|round(1) }} KB</td>
+                            <td>{{ report['uploaded_at'] }}</td>
+                            <td style="text-align: right;">
+                                <a href="{{ url_for('reports.download_report', report_id=report['id']) }}" target="_blank" class="btn btn-primary btn-sm">
+                                    📥 Open Original File
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="color: var(--gray-medium); font-size: 0.9rem;">No documents uploaded by patient.</p>
+    {% endif %}
+</div>
+
+<div style="margin-top: 1rem; margin-bottom: 2rem;">
+    <a href="{{ url_for('emergency.index') }}" class="btn btn-outline">
+        &larr; Back to Emergency Share Hub
+    </a>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline" style="margin-left: 0.5rem;">
+        Dashboard
+    </a>
+</div>
+{% endblock %}

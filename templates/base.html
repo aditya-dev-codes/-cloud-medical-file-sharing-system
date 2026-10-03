@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cloud File Sharing & Emergency Medical Profile{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard.index') if g.user else url_for('auth.login') }}" class="nav-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                <path d="M12 5v6"/>
+                <path d="M9 8h6"/>
+            </svg>
+            <span>MediCloud Share</span>
+            <span class="tag">Review 2</span>
+        </a>
+
+        <ul class="nav-links">
+            {% if g.user %}
+                <li><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('profile.view') }}">Medical Profile</a></li>
+                <li><a href="{{ url_for('reports.list_reports') }}">Medical Reports</a></li>
+                <li><a href="{{ url_for('emergency.index') }}" style="color: #b91c1c; font-weight: 600;">🚨 Emergency Share</a></li>
+                <li><span class="user-pill">👤 {{ g.user['username'] }}</span></li>
+                <li><a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm">Logout</a></li>
+            {% else %}
+                <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                <li><a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Flash Alert Messages -->
+        <div class="flash-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Educational / Prototype Footer -->
+    <footer>
+        <p><strong>Cloud File Sharing System with AI-Powered Emergency Medical Profile</strong></p>
+        <p style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">
+            College Prototype &bull; For demonstration purposes only using sample fictional data &bull; Not for clinical diagnosis.
+        </p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

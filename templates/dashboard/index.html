@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - MediCloud Share{% endblock %}
+
+{% block content %}
+<!-- Welcome & Quick Status Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2>Patient Portal Dashboard</h2>
+        <p style="color: var(--gray-medium);">
+            Logged in as <strong>{{ g.user['username'] }}</strong> ({{ g.user['email'] }})
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('profile.edit') }}" class="btn btn-outline btn-sm">
+            ✏️ Edit Profile
+        </a>
+        <a href="{{ url_for('profile.view') }}" class="btn btn-primary btn-sm">
+            📋 View Medical Card
+        </a>
+    </div>
+</div>
+
+<!-- Prototype Notice -->
+<div class="disclaimer-box">
+    <strong>Review 2 Demonstration Mode:</strong> All data shown is sample/fictional patient data. AI summaries are strictly factual extracts without diagnostic recommendations.
+</div>
+
+<!-- 4 Core Dashboard Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+
+    <!-- 1. Medical Profile Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title">🩺 Medical Profile</h3>
+            {% if profile and profile['blood_group'] %}
+                <span style="background: #e0f2fe; color: #0284c7; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;">
+                    Blood: {{ profile['blood_group'] }}
+                </span>
+            {% else %}
+                <span class="emergency-badge" style="background: #fef3c7; color: #b45309;">Incomplete</span>
+            {% endif %}
+        </div>
+
+        <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">
+            <strong>Full Name:</strong> {{ profile['full_name'] or 'Not set' }}
+        </p>
+        <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">
+            <strong>Emergency Contact:</strong> 
+            {{ profile['emergency_contact_name'] or 'Not set' }}
+            {% if profile and profile['emergency_contact_phone'] %}
+                ({{ profile['emergency_contact_phone'] }})
+            {% endif %}
+        </p>
+        <p style="font-size: 0.95rem; margin-bottom: 1rem;">
+            <strong>Allergies:</strong> 
+            <span style="color: #b91c1c; font-weight: 500;">
+                {{ profile['allergies'] or 'None recorded' }}
+            </span>
+        </p>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('profile.view') }}" class="btn btn-outline btn-sm">View Details</a>
+            <a href="{{ url_for('profile.edit') }}" class="btn btn-primary btn-sm">Update Profile</a>
+        </div>
+    </div>
+
+    <!-- 2. Medical Reports Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title">📁 Cloud Reports</h3>
+            <span style="background: #f1f5f9; color: var(--gray-dark); font-weight: 600; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;">
+                {{ report_count }} File(s)
+            </span>
+        </div>
+
+        <p style="font-size: 0.95rem; color: var(--gray-dark); margin-bottom: 0.75rem;">
+            Secure local/cloud storage for PDF lab reports, discharge summaries, and prescriptions.
+        </p>
+
+        {% if report_count > 0 %}
+            <p style="font-size: 0.85rem; color: var(--success); font-weight: 600; margin-bottom: 1rem;">
+                ✓ {{ report_count }} document(s) uploaded and available.
+            </p>
+        {% else %}
+            <div style="background: #f8fafc; border: 1px dashed var(--gray-light); border-radius: 6px; padding: 0.85rem; text-align: center; margin-bottom: 1rem;">
+                <span style="color: var(--gray-medium); font-size: 0.85rem;">No documents uploaded yet (Target: Milestone 3).</span>
+            </div>
+        {% endif %}
+
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('reports.list_reports') }}" class="btn btn-outline btn-sm">
+                View All ({{ report_count }})
+            </a>
+            <a href="{{ url_for('reports.upload') }}" class="btn btn-primary btn-sm">
+                📤 Upload Report
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. AI Medical Summary Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title">🤖 AI Summarizer</h3>
+            <span style="background: #e0e7ff; color: #4338ca; font-weight: 600; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem;">
+                Summaries: {{ summary_count }}
+            </span>
+        </div>
+
+        <p style="font-size: 0.92rem; color: var(--gray-dark); margin-bottom: 0.75rem;">
+            Extracts vital conditions, medications, and allergies from uploaded reports into concise doctor summaries.
+        </p>
+        
+        <div style="background: #f8fafc; border-left: 3px solid #6366f1; padding: 0.6rem 0.8rem; font-size: 0.82rem; color: var(--gray-dark); margin-bottom: 1rem;">
+            <strong>Guardrail:</strong> Factual summarization only. Never prescribes or diagnoses.
+        </div>
+
+        <div>
+            <a href="{{ url_for('reports.list_reports') }}" class="btn btn-outline btn-sm" style="color: #4338ca; border-color: #c7d2fe;">
+                🔬 View Reports & Summaries
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. Emergency Share Placeholder Card -->
+    <div class="card" style="margin-bottom: 0; border-top: 3px solid var(--danger);">
+        <div class="card-header">
+            <h3 class="card-title" style="color: #991b1b;">🚨 Emergency Access</h3>
+            <span class="emergency-badge">Preview</span>
+        </div>
+
+        <p style="font-size: 0.92rem; color: var(--gray-dark); margin-bottom: 0.75rem;">
+            One-touch emergency share card designed for paramedics and emergency room physicians.
+        </p>
+
+        <div style="background: #fff5f5; border: 1px solid #fed7d7; border-radius: 6px; padding: 0.7rem; font-size: 0.85rem; color: #9b2c2c; margin-bottom: 1rem;">
+            Displays instant vitals (Blood group, allergies, contact) during an acute medical crisis.
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('emergency.index') }}" class="btn btn-outline btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
+                Emergency Hub
+            </a>
+            <a href="{{ url_for('emergency.emergency_view') }}" class="btn btn-danger btn-sm">
+                ⚡ Quick View
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- Recent Reports Table / Activity -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Recent Medical Documents</h3>
+    </div>
+
+    {% if recent_reports %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Document Name</th>
+                        <th>Type</th>
+                        <th>Size</th>
+                        <th>Uploaded On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in recent_reports %}
+                        <tr>
+                            <td><strong>{{ report['original_filename'] }}</strong></td>
+                            <td><span style="text-transform: uppercase; font-size: 0.8rem;">{{ report['file_type'] }}</span></td>
+                            <td>{{ (report['file_size'] / 1024)|round(1) }} KB</td>
+                            <td>{{ report['uploaded_at'] }}</td>
+                            <td>
+                                <a href="{{ url_for('reports.view_report', report_id=report['id']) }}" class="btn btn-outline btn-sm">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 2rem 1rem; color: var(--gray-medium);">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📄</div>
+            <p style="font-weight: 500;">No medical reports uploaded yet.</p>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem; margin-bottom: 1rem;">
+                Upload your medical documents such as lab tests, discharge summaries, or prescriptions.
+            </p>
+            <a href="{{ url_for('reports.upload') }}" class="btn btn-primary btn-sm">
+                📤 Upload Your First Report
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

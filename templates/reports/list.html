@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Medical Reports - MediCloud Share{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2>Medical Documents & Reports</h2>
+        <p style="color: var(--gray-medium); font-size: 0.95rem;">
+            Securely stored laboratory tests, prescriptions, and clinical records.
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('reports.upload') }}" class="btn btn-primary">
+            📤 Upload New Report
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Stored Medical Reports</h3>
+        <span style="font-size: 0.88rem; color: var(--gray-medium);">Total: {{ reports|length }} file(s)</span>
+    </div>
+
+    {% if reports %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Original Filename</th>
+                        <th>Format</th>
+                        <th>Size</th>
+                        <th>Upload Date</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                        <tr>
+                            <td>
+                                <strong>
+                                    <a href="{{ url_for('reports.view_report', report_id=report['id']) }}" style="color: var(--primary); text-decoration: none;">
+                                        📄 {{ report['original_filename'] }}
+                                    </a>
+                                </strong>
+                            </td>
+                            <td>
+                                <span style="background: #f1f5f9; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-size: 0.78rem; text-transform: uppercase;">
+                                    {{ report['file_type'] }}
+                                </span>
+                            </td>
+                            <td>{{ (report['file_size'] / 1024)|round(1) }} KB</td>
+                            <td style="color: var(--gray-medium); font-size: 0.88rem;">{{ report['uploaded_at'] }}</td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="{{ url_for('reports.view_report', report_id=report['id']) }}" class="btn btn-outline btn-sm">
+                                    View
+                                </a>
+                                <a href="{{ url_for('reports.download_report', report_id=report['id']) }}" target="_blank" class="btn btn-outline btn-sm" title="Open / Download original file">
+                                    📥 Download
+                                </a>
+                                <form action="{{ url_for('reports.delete_report', report_id=report['id']) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to permanently delete this report?');">
+                                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.35rem 0.65rem;" title="Delete report">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.75rem;">📁</div>
+            <h4 style="color: var(--dark); margin-bottom: 0.5rem;">No medical reports found</h4>
+            <p style="color: var(--gray-medium); max-width: 480px; margin: 0 auto 1.5rem auto; font-size: 0.95rem;">
+                Upload your medical documents such as blood tests, radiology reports, or discharge summaries in PDF or TXT format.
+            </p>
+            <a href="{{ url_for('reports.upload') }}" class="btn btn-primary">
+                Upload Your First Report
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<div style="margin-top: 1rem;">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline">
+        &larr; Back to Dashboard
+    </a>
+</div>
+{% endblock %}
