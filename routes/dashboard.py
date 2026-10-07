@@ -36,10 +36,18 @@ def index():
         WHERE r.user_id = ?
     """, (user_id,)).fetchone()['count']
 
+    # 4. Fetch active emergency token and recent audit logs
+    from models.token import TokenModel
+    from models.access_log import AccessLogModel
+    active_token = TokenModel.get_active_token(user_id)
+    recent_access_logs = AccessLogModel.get_by_user_id(user_id, limit=5)
+
     return render_template(
         'dashboard/index.html',
         profile=profile,
         report_count=report_count,
         recent_reports=recent_reports,
-        summary_count=summary_count
+        summary_count=summary_count,
+        active_token=active_token,
+        recent_access_logs=recent_access_logs
     )

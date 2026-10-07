@@ -78,16 +78,18 @@ def create_token():
     user_id = session.get('user_id')
     label = request.form.get('label', '').strip() or "Emergency Link"
     try:
-        duration_hours = float(request.form.get('duration_hours', 2))
+        duration_hours = float(request.form.get('duration_hours', 24))
         if duration_hours <= 0 or duration_hours > 720:  # Up to 30 days max
-            duration_hours = 2
+            duration_hours = 24
     except ValueError:
-        duration_hours = 2
+        duration_hours = 24
 
-    token_record = TokenModel.create(user_id=user_id, duration_hours=duration_hours, label=label)
-    if token_record:
-        access_url = url_for('emergency.public_access', token_str=token_record['token'], _external=True)
-        flash(f"Emergency access link created! Valid for {int(duration_hours)} hour(s).", "success")
+    raw_token, token_record = TokenModel.create(user_id=user_id, duration_hours=duration_hours, label=label)
+    if raw_token and token_record:
+        access_url = url_for('emergency.public_access', token_str=raw_token, _external=True)
+        session['active_emergency_url'] = access_url
+        session['active_emergency_token'] = raw_token
+        flash(f"Emergency access link created! Valid for {int(duration_hours)} hour(s). URL: {access_url}", "success")
     else:
         flash("Failed to generate emergency token. Please try again.", "danger")
 
@@ -100,12 +102,15 @@ def revoke_token(token_id):
     user_id = session.get('user_id')
     success = TokenModel.revoke(token_id=token_id, user_id=user_id)
     if success:
+        session.pop('active_emergency_url', None)
+        session.pop('active_emergency_token', None)
         flash("Emergency access link revoked immediately. Any further attempts to use it will be blocked.", "info")
     else:
         flash("Could not revoke token or token not found.", "warning")
 
     return redirect(url_for('emergency.index'))
 
+@emergency_bp.route('/<token_str>')
 @emergency_bp.route('/access/<token_str>')
 def public_access(token_str):
     """
@@ -128,7 +133,12 @@ def public_access(token_str):
         ), 404
 
     # Log token identifier (masked for security)
-    token_ident = f"emg_{token['token'][:6]}...{token['token'][-4:]}"
+    if 'token_prefix' in token.keys() and token['token_prefix']:
+        token_ident = f"emg_{token['token_prefix']}..."
+    elif 'token' in token.keys() and token['token']:
+        token_ident = f"emg_{token['token'][:6]}...{token['token'][-4:]}"
+    else:
+        token_ident = f"emg_{token_str[:6]}..."
     patient_id = token['user_id']
 
     # 2. Revoked token
@@ -180,29 +190,38 @@ def public_access(token_str):
 
     db = get_db()
     profile = ProfileModel.get_by_user_id(patient_id)
-    reports = ReportModel.get_by_user_id(patient_id)
+    # Only show medical reports that patient has explicitly permitted
+    reports = ReportModel.get_emergency_reports(patient_id)
+    allowed_report_ids = [r['id'] for r in reports]
 
-    summaries = db.execute("""
-        SELECT s.*, r.original_filename, r.file_type, r.id as report_id
-        FROM ai_summaries s
-        JOIN medical_reports r ON s.report_id = r.id
-        WHERE r.user_id = ?
-        ORDER BY s.created_at DESC
-    """, (patient_id,)).fetchall()
+    # Only show AI summaries for permitted reports
+    summaries = []
+    if allowed_report_ids:
+        placeholders = ','.join(['?'] * len(allowed_report_ids))
+        summaries = db.execute(f"""
+            SELECT s.*, r.original_filename, r.file_type, r.id as report_id
+            FROM ai_summaries s
+            JOIN medical_reports r ON s.report_id = r.id
+            WHERE r.id IN ({placeholders})
+            ORDER BY s.created_at DESC
+        """, allowed_report_ids).fetchall()
 
     return render_template(
         'emergency/public_view.html',
         profile=profile,
         reports=reports,
         summaries=summaries,
-        token=token
+        token=token,
+        raw_token=token_str
     )
 
+@emergency_bp.route('/<token_str>/report/<int:report_id>')
 @emergency_bp.route('/access/<token_str>/report/<int:report_id>')
 def public_download_report(token_str, report_id):
     """
     Stream a medical report to an emergency responder using a valid token.
-    Validates token validity and verifies report belongs to token owner.
+    Validates token validity, verifies report belongs to patient,
+    and enforces emergency_access_allowed permission.
     """
     ip_address = request.remote_addr
     user_agent = request.headers.get('User-Agent', '')
@@ -212,11 +231,25 @@ def public_download_report(token_str, report_id):
         abort(403, description="Access token is invalid, expired, or revoked.")
 
     patient_id = token['user_id']
-    token_ident = f"emg_{token['token'][:6]}...{token['token'][-4:]}"
+    token_ident = f"emg_{token['token_prefix']}..." if 'token_prefix' in token.keys() and token['token_prefix'] else "emg_token"
 
     report = ReportModel.get_user_report(report_id, patient_id)
     if not report:
         abort(404, description="Report not found or not associated with this emergency profile.")
+
+    # Check emergency access permission
+    if 'emergency_access_allowed' in report.keys() and report['emergency_access_allowed'] == 0:
+        AccessLogModel.log(
+            user_id=patient_id,
+            action='DOWNLOAD_REPORT_BLOCKED',
+            status='BLOCKED_PERMISSION',
+            token_id=token['id'],
+            token_identifier=token_ident,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            report_id=report_id
+        )
+        abort(403, description="Access denied: Patient has marked this report private from emergency access.")
 
     # Log successful report access
     AccessLogModel.log(

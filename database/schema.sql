@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS medical_reports (
     file_path TEXT NOT NULL,
     file_size INTEGER NOT NULL,
     file_type TEXT NOT NULL,
+    emergency_access_allowed INTEGER DEFAULT 1,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -52,14 +53,18 @@ CREATE TABLE IF NOT EXISTS ai_summaries (
     FOREIGN KEY (report_id) REFERENCES medical_reports (id) ON DELETE CASCADE
 );
 
--- Temporary Emergency Access Tokens
+-- Temporary Emergency Access Tokens (Secured with SHA-256 Hashes)
 CREATE TABLE IF NOT EXISTS emergency_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    token TEXT UNIQUE NOT NULL,
-    label TEXT,
+    token_hash TEXT UNIQUE NOT NULL,
+    token_prefix TEXT NOT NULL,
+    label TEXT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
-    is_revoked INTEGER DEFAULT 0,
+    revoked_at TIMESTAMP,
+    is_active INTEGER DEFAULT 1,
+    access_count INTEGER DEFAULT 0,
+    last_accessed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -72,6 +77,8 @@ CREATE TABLE IF NOT EXISTS access_logs (
     token_identifier TEXT,
     action TEXT NOT NULL,
     status TEXT NOT NULL,
+    resource_type TEXT DEFAULT 'PROFILE',
+    resource_id INTEGER,
     ip_address TEXT,
     user_agent TEXT,
     report_id INTEGER,

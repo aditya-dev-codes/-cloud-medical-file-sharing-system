@@ -122,29 +122,75 @@
         </div>
     </div>
 
-    <!-- 4. Emergency Share Placeholder Card -->
+    <!-- 4. Emergency Access Card (Milestone 7) -->
     <div class="card" style="margin-bottom: 0; border-top: 3px solid var(--danger);">
         <div class="card-header">
             <h3 class="card-title" style="color: #991b1b;">🚨 Emergency Access</h3>
-            <span class="emergency-badge">Preview</span>
+            {% if active_token %}
+                <span class="emergency-badge" style="background: #dcfce7; color: #15803d;">Active Link</span>
+            {% else %}
+                <span class="emergency-badge" style="background: #f1f5f9; color: #64748b;">No Active Link</span>
+            {% endif %}
         </div>
 
-        <p style="font-size: 0.92rem; color: var(--gray-dark); margin-bottom: 0.75rem;">
-            One-touch emergency share card designed for paramedics and emergency room physicians.
-        </p>
+        {% if active_token %}
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.75rem; font-size: 0.85rem; color: #166534; margin-bottom: 0.75rem;">
+                <div><strong>Status:</strong> Active & Authorized</div>
+                <div><strong>Expires:</strong> {{ active_token['expires_at'] }}</div>
+                <div><strong>Access Count:</strong> {{ active_token['access_count'] or 0 }} access event(s)</div>
+            </div>
 
-        <div style="background: #fff5f5; border: 1px solid #fed7d7; border-radius: 6px; padding: 0.7rem; font-size: 0.85rem; color: #9b2c2c; margin-bottom: 1rem;">
-            Displays instant vitals (Blood group, allergies, contact) during an acute medical crisis.
-        </div>
+            {% if session.get('active_emergency_url') %}
+                <div style="margin-bottom: 0.75rem;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="text" readonly value="{{ session.get('active_emergency_url') }}" class="form-control" style="font-size: 0.8rem; background: #fff; padding: 0.3rem 0.5rem;" id="dashEmergencyUrl">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('dashEmergencyUrl').value); alert('Copied emergency URL!');" style="white-space: nowrap; font-size: 0.78rem;">
+                            📋 Copy
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
 
-        <div style="display: flex; gap: 0.5rem;">
-            <a href="{{ url_for('emergency.index') }}" class="btn btn-outline btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
-                Emergency Hub
-            </a>
-            <a href="{{ url_for('emergency.emergency_view') }}" class="btn btn-danger btn-sm">
-                ⚡ Quick View
-            </a>
-        </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="{{ url_for('emergency.index') }}" class="btn btn-outline btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
+                    Emergency Hub
+                </a>
+                <form action="{{ url_for('emergency.revoke_token', token_id=active_token['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Revoke this emergency access link immediately?');">
+                    <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.8rem;">
+                        🚫 Revoke Access
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <p style="font-size: 0.88rem; color: var(--gray-dark); margin-bottom: 0.75rem;">
+                No emergency link is currently active. Generate a time-limited link for paramedics or ER staff:
+            </p>
+
+            <form action="{{ url_for('emergency.create_token') }}" method="POST" style="margin-bottom: 0.75rem;">
+                <input type="hidden" name="label" value="Quick ER Link">
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                    <select name="duration_hours" class="form-control" style="font-size: 0.85rem; padding: 0.35rem 0.5rem;">
+                        <option value="1">1 Hour</option>
+                        <option value="6">6 Hours</option>
+                        <option value="24" selected>24 Hours (Default)</option>
+                        <option value="72">3 Days (72h)</option>
+                        <option value="168">7 Days (168h)</option>
+                    </select>
+                    <button type="submit" class="btn btn-danger btn-sm" style="white-space: nowrap; font-weight: 700;">
+                        ⚡ Generate
+                    </button>
+                </div>
+            </form>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{{ url_for('emergency.index') }}" class="btn btn-outline btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
+                    Manage Links
+                </a>
+                <a href="{{ url_for('emergency.emergency_view') }}" class="btn btn-outline btn-sm">
+                    👁️ Preview
+                </a>
+            </div>
+        {% endif %}
     </div>
 
 </div>

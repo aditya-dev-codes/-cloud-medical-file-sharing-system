@@ -34,6 +34,26 @@
                 </div>
             </div>
 
+            <!-- Emergency Access Permission Toggle -->
+            <div style="background: #f8fafc; border: 1px solid var(--gray-light); border-radius: var(--radius); padding: 0.85rem 1rem; margin-top: 1rem;">
+                <label style="display: flex; align-items: flex-start; gap: 0.65rem; cursor: pointer; margin-bottom: 0;">
+                    <input 
+                        type="checkbox" 
+                        name="emergency_access_allowed" 
+                        id="emergency_access_allowed" 
+                        value="1" 
+                        checked 
+                        style="width: 18px; height: 18px; margin-top: 2px;"
+                    >
+                    <div>
+                        <strong style="color: var(--dark); font-size: 0.92rem;">🚨 Allow in Emergency Access</strong>
+                        <div style="color: var(--gray-medium); font-size: 0.82rem; margin-top: 2px;">
+                            When enabled, emergency doctors and paramedics with a valid emergency link can view this document and its AI summary. Uncheck to keep this file strictly private.
+                        </div>
+                    </div>
+                </label>
+            </div>
+
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-primary" style="flex: 1;">
                     📤 Upload to Secure Cloud

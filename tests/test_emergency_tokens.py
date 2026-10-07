@@ -80,19 +80,19 @@ class EmergencyTokensTestCase(unittest.TestCase):
     def test_token_creation_and_lifecycle(self):
         """Test token creation, duration, expiration check, and revocation."""
         with self.app.app_context():
-            token = TokenModel.create(self.user1_id, duration_hours=2, label="ER Link")
+            raw_token, token = TokenModel.create(self.user1_id, duration_hours=2, label="ER Link")
             self.assertIsNotNone(token)
             self.assertEqual(token['user_id'], self.user1_id)
-            self.assertEqual(token['is_revoked'], 0)
-            self.assertTrue(len(token['token']) >= 24)
+            self.assertEqual(token['is_active'], 1)
+            self.assertTrue(len(raw_token) >= 24)
 
             # Validate active token
-            tok, status = TokenModel.validate_token(token['token'])
+            tok, status = TokenModel.validate_token(raw_token)
             self.assertEqual(status, 'VALID')
 
             # Test revocation
             TokenModel.revoke(token['id'], self.user1_id)
-            tok, status = TokenModel.validate_token(token['token'])
+            tok, status = TokenModel.validate_token(raw_token)
             self.assertEqual(status, 'REVOKED')
 
             # Test invalid token
@@ -102,22 +102,22 @@ class EmergencyTokensTestCase(unittest.TestCase):
     def test_token_expiration(self):
         """Test that past expiration timestamps are correctly identified as EXPIRED."""
         with self.app.app_context():
-            token = TokenModel.create(self.user1_id, duration_hours=-1, label="Expired Link")
-            tok, status = TokenModel.validate_token(token['token'])
+            raw_token, token = TokenModel.create(self.user1_id, duration_hours=-1, label="Expired Link")
+            tok, status = TokenModel.validate_token(raw_token)
             self.assertEqual(status, 'EXPIRED')
 
     def test_public_emergency_access_route(self):
         """Test public emergency access endpoint with valid, revoked, and expired tokens."""
         with self.app.app_context():
-            token_valid = TokenModel.create(self.user1_id, duration_hours=2, label="Valid ER Link")
-            token_revoked = TokenModel.create(self.user1_id, duration_hours=2, label="Revoked Link")
+            raw_valid, token_valid = TokenModel.create(self.user1_id, duration_hours=2, label="Valid ER Link")
+            raw_revoked, token_revoked = TokenModel.create(self.user1_id, duration_hours=2, label="Revoked Link")
             TokenModel.revoke(token_revoked['id'], self.user1_id)
-            token_expired = TokenModel.create(self.user1_id, duration_hours=-2, label="Expired Link")
+            raw_expired, token_expired = TokenModel.create(self.user1_id, duration_hours=-2, label="Expired Link")
 
         # 1. Valid token -> 200 OK with clinical info
-        res = self.client.get(f'/emergency/access/{token_valid["token"]}')
+        res = self.client.get(f'/emergency/{raw_valid}')
         self.assertEqual(res.status_code, 200)
-        self.assertIn(b'EMERGENCY MEDICAL PROFILE', res.data)
+        self.assertIn(b'EMERGENCY MEDICAL ACCESS', res.data)
         self.assertIn(b'Alice Smith', res.data)
         self.assertIn(b'O+', res.data)
         self.assertIn(b'Penicillin Anaphylaxis', res.data)
@@ -126,28 +126,32 @@ class EmergencyTokensTestCase(unittest.TestCase):
         self.assertNotIn(b'Logout', res.data)
         self.assertNotIn(b'Edit Profile', res.data)
 
+        # Also test /emergency/access/<token> compatibility
+        res2 = self.client.get(f'/emergency/access/{raw_valid}')
+        self.assertEqual(res2.status_code, 200)
+
         # 2. Revoked token -> 403 Forbidden
-        res = self.client.get(f'/emergency/access/{token_revoked["token"]}')
+        res = self.client.get(f'/emergency/{raw_revoked}')
         self.assertEqual(res.status_code, 403)
         self.assertIn(b'Link Revoked', res.data)
 
         # 3. Expired token -> 403 Forbidden
-        res = self.client.get(f'/emergency/access/{token_expired["token"]}')
+        res = self.client.get(f'/emergency/{raw_expired}')
         self.assertEqual(res.status_code, 403)
         self.assertIn(b'Link Expired', res.data)
 
         # 4. Non-existent token -> 404 Not Found
-        res = self.client.get('/emergency/access/random_invalid_token')
+        res = self.client.get('/emergency/random_invalid_token')
         self.assertEqual(res.status_code, 404)
         self.assertIn(b'Invalid Emergency Link', res.data)
 
     def test_token_authorized_report_download(self):
         """Test emergency doctor downloading patient report with a valid token."""
         with self.app.app_context():
-            token = TokenModel.create(self.user1_id, duration_hours=2, label="ER Download Link")
+            raw_token, token = TokenModel.create(self.user1_id, duration_hours=2, label="ER Download Link")
 
         # Download report via token
-        res = self.client.get(f'/emergency/access/{token["token"]}/report/{self.report1_id}')
+        res = self.client.get(f'/emergency/{raw_token}/report/{self.report1_id}')
         self.assertEqual(res.status_code, 200)
         self.assertIn(b'Clinical notes for Alice', res.data)
         res.close()
@@ -156,16 +160,16 @@ class EmergencyTokensTestCase(unittest.TestCase):
         with self.app.app_context():
             TokenModel.revoke(token['id'], self.user1_id)
 
-        res = self.client.get(f'/emergency/access/{token["token"]}/report/{self.report1_id}')
+        res = self.client.get(f'/emergency/{raw_token}/report/{self.report1_id}')
         self.assertEqual(res.status_code, 403)
 
     def test_emergency_access_logging(self):
         """Verify access attempts are recorded in access_logs table and viewable by patient."""
         with self.app.app_context():
-            token = TokenModel.create(self.user1_id, duration_hours=2, label="Audit Test Link")
+            raw_token, token = TokenModel.create(self.user1_id, duration_hours=2, label="Audit Test Link")
 
         # Trigger access
-        self.client.get(f'/emergency/access/{token["token"]}')
+        self.client.get(f'/emergency/{raw_token}')
 
         # Verify log entry in database
         with self.app.app_context():

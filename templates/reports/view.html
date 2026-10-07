@@ -50,6 +50,25 @@
             <span style="font-size: 0.85rem; color: var(--gray-medium); display: block;">Storage ID</span>
             <code style="font-size: 0.82rem; color: var(--gray-dark);">{{ report['filename'] }}</code>
         </div>
+        <div>
+            <span style="font-size: 0.85rem; color: var(--gray-medium); display: block;">Emergency Access</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 2px;">
+                {% if report['emergency_access_allowed'] == 1 or report['emergency_access_allowed'] is none %}
+                    <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82rem;">
+                        ✓ Permitted in Emergency
+                    </span>
+                {% else %}
+                    <span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82rem;">
+                        🔒 Private (Excluded)
+                    </span>
+                {% endif %}
+                <form action="{{ url_for('reports.toggle_emergency', report_id=report['id']) }}" method="POST" style="margin: 0; display: inline;">
+                    <button type="submit" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 1px 6px;">
+                        {% if report['emergency_access_allowed'] == 1 or report['emergency_access_allowed'] is none %}Exclude{% else %}Allow{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 

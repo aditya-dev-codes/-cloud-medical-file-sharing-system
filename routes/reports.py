@@ -38,14 +38,18 @@ def upload():
             # 1. Save file to storage abstraction
             file_meta = LocalStorageService.save_file(file, user_id)
 
-            # 2. Save metadata to database
+            # 2. Check emergency access permission (default allowed: 1)
+            emergency_access_allowed = 1 if request.form.get('emergency_access_allowed', '1') in ('1', 'on', 'true') else 0
+
+            # 3. Save metadata to database
             report_id = ReportModel.create(
                 user_id=user_id,
                 filename=file_meta['filename'],
                 original_filename=file_meta['original_filename'],
                 file_path=file_meta['file_path'],
                 file_size=file_meta['file_size'],
-                file_type=file_meta['file_type']
+                file_type=file_meta['file_type'],
+                emergency_access_allowed=emergency_access_allowed
             )
 
             flash(f"Report '{file_meta['original_filename']}' uploaded successfully!", "success")
@@ -165,3 +169,22 @@ def delete_report(report_id):
 
     flash(f"Report '{report['original_filename']}' was deleted.", "info")
     return redirect(url_for('reports.list_reports'))
+
+@reports_bp.route('/<int:report_id>/toggle-emergency', methods=['POST'])
+@login_required
+def toggle_emergency(report_id):
+    """Toggle whether a report is included in emergency access view."""
+    user_id = session.get('user_id')
+    new_val = ReportModel.toggle_emergency_access(report_id, user_id)
+    if new_val is None:
+        flash("Report not found or unauthorized.", "danger")
+    elif new_val == 1:
+        flash("Emergency access enabled for this report.", "success")
+    else:
+        flash("Emergency access disabled for this report (marked private).", "info")
+
+    # Redirect back to referring page or view_report
+    referrer = request.referrer
+    if referrer and ('/reports/' in referrer or '/reports' in referrer):
+        return redirect(referrer)
+    return redirect(url_for('reports.view_report', report_id=report_id))

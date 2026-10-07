@@ -115,7 +115,9 @@
                 <thead>
                     <tr>
                         <th>Label</th>
+                        <th>Token ID</th>
                         <th>Status</th>
+                        <th>Access Count</th>
                         <th>Created</th>
                         <th>Expires At</th>
                         <th>Emergency Link</th>
@@ -126,43 +128,48 @@
                     {% for t in tokens %}
                         <tr>
                             <td><strong>{{ t['label'] }}</strong></td>
+                            <td><code style="font-size: 0.82rem;">{{ t['token_prefix'] or 'token' }}...</code></td>
                             <td>
-                                {% if t['is_revoked'] %}
+                                {% if t['status_text'] == 'Revoked' %}
                                     <span class="emergency-badge" style="background: #f1f5f9; color: #64748b;">Revoked</span>
-                                {% elif t['is_expired'] %}
+                                {% elif t['status_text'] == 'Expired' %}
                                     <span class="emergency-badge" style="background: #fee2e2; color: #b91c1c;">Expired</span>
                                 {% else %}
                                     <span class="emergency-badge" style="background: #dcfce7; color: #15803d;">Active</span>
                                 {% endif %}
                             </td>
+                            <td style="font-size: 0.85rem; text-align: center;"><strong>{{ t['access_count'] or 0 }}</strong></td>
                             <td style="color: var(--gray-medium); font-size: 0.85rem;">{{ t['created_at'] }}</td>
                             <td style="font-size: 0.85rem;">
-                                {% if t['is_expired'] and not t['is_revoked'] %}
+                                {% if t['status_text'] == 'Expired' %}
                                     <span style="color: var(--danger);">{{ t['expires_at'] }}</span>
                                 {% else %}
                                     {{ t['expires_at'] }}
                                 {% endif %}
                             </td>
                             <td>
-                                {% if not t['is_revoked'] and not t['is_expired'] %}
-                                    <a href="{{ url_for('emergency.public_access', token_str=t['token']) }}" target="_blank" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: 600;">
-                                        🔗 Open Link
-                                    </a>
-                                    <span style="color: var(--gray-light); margin: 0 4px;">|</span>
-                                    <button 
-                                        type="button" 
-                                        class="btn btn-outline btn-sm" 
-                                        style="font-size: 0.75rem; padding: 1px 6px;"
-                                        onclick="navigator.clipboard.writeText('{{ url_for('emergency.public_access', token_str=t['token'], _external=True) }}'); alert('Emergency Link copied to clipboard!');"
-                                    >
-                                        📋 Copy
-                                    </button>
+                                {% if t['status_text'] == 'Active' %}
+                                    {% if session.get('active_emergency_url') and loop.first %}
+                                        <button 
+                                            type="button" 
+                                            class="btn btn-outline btn-sm" 
+                                            style="font-size: 0.75rem; padding: 2px 7px;"
+                                            onclick="navigator.clipboard.writeText('{{ session.get('active_emergency_url') }}'); alert('Emergency Link copied to clipboard!');"
+                                        >
+                                            📋 Copy Link
+                                        </button>
+                                        <a href="{{ session.get('active_emergency_url') }}" target="_blank" style="margin-left: 4px; font-size: 0.8rem; text-decoration: none;">
+                                            🔗 Open
+                                        </a>
+                                    {% else %}
+                                        <span style="color: var(--success); font-size: 0.82rem; font-weight: 600;">Active in System</span>
+                                    {% endif %}
                                 {% else %}
                                     <span style="color: var(--gray-medium); font-size: 0.85rem;">Inactive</span>
                                 {% endif %}
                             </td>
                             <td style="text-align: right;">
-                                {% if not t['is_revoked'] and not t['is_expired'] %}
+                                {% if t['status_text'] == 'Active' %}
                                     <form action="{{ url_for('emergency.revoke_token', token_id=t['id']) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Revoke this emergency access link immediately?');">
                                         <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.8rem; padding: 0.3rem 0.65rem;">
                                             🚫 Revoke

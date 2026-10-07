@@ -51,11 +51,11 @@
         <!-- Emergency Header -->
         <div class="emg-header" style="margin-top: 1rem;">
             <div>
-                <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 0.25rem;">
-                    Hospital Emergency Department & Paramedic Portal
+                <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.95; margin-bottom: 0.25rem;">
+                    Read-only emergency medical information
                 </div>
                 <h1 style="font-size: 1.6rem; font-weight: 900; margin: 0;">
-                    🚨 EMERGENCY MEDICAL PROFILE
+                    🚨 EMERGENCY MEDICAL ACCESS
                 </h1>
             </div>
             <div style="text-align: right; font-size: 0.82rem; background: rgba(0,0,0,0.25); padding: 0.5rem 0.85rem; border-radius: 6px;">
@@ -65,8 +65,8 @@
         </div>
 
         <!-- Mandatory Clinical Notice -->
-        <div class="disclaimer-box" style="margin-bottom: 1.5rem;">
-            <strong>Emergency Attending Notice:</strong> This summary was shared via a temporary token. Verify AI summaries against original uploaded diagnostic reports. The AI does not diagnose, prescribe, or provide treatment advice.
+        <div class="disclaimer-box" style="margin-bottom: 1.5rem; background: #fffbeb; border-color: #fde68a; border-left: 4px solid #f59e0b; color: #92400e;">
+            <strong>Emergency Attending Notice:</strong> This information is being accessed through temporary emergency authorization. Verify important information against the original medical records.
         </div>
 
         <!-- 1. Patient Identification & Critical Vitals -->
@@ -204,7 +204,7 @@
                                 <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-weight: 600;">
                                     {% if summary['is_mock'] %}Local Mock AI{% else %}Live Gemini AI{% endif %}
                                 </span>
-                                <a href="{{ url_for('emergency.public_download_report', token_str=token['token'], report_id=summary['report_id']) }}" target="_blank" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">
+                                <a href="{{ url_for('emergency.public_download_report', token_str=raw_token, report_id=summary['report_id']) }}" target="_blank" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">
                                     📥 View Original Document
                                 </a>
                             </div>
@@ -248,7 +248,7 @@
                                     <td>{{ (report['file_size'] / 1024)|round(1) }} KB</td>
                                     <td>{{ report['uploaded_at'] }}</td>
                                     <td style="text-align: right;" class="no-print">
-                                        <a href="{{ url_for('emergency.public_download_report', token_str=token['token'], report_id=report['id']) }}" target="_blank" class="btn btn-primary btn-sm">
+                                        <a href="{{ url_for('emergency.public_download_report', token_str=raw_token, report_id=report['id']) }}" target="_blank" class="btn btn-primary btn-sm">
                                             📥 Open Original File
                                         </a>
                                     </td>

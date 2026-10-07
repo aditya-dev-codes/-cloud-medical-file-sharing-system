@@ -1,32 +1,50 @@
 import secrets
+import hashlib
 from datetime import datetime, timedelta
 from database.db import get_db
 
 class TokenModel:
-    """Helper functions for temporary emergency access token generation and validation."""
+    """
+    Cryptographically secure emergency token management using SHA-256 hashing.
+    Raw secret tokens are NEVER stored in plain text in the database.
+    """
 
     @staticmethod
-    def create(user_id, duration_hours=2, label="Emergency Link"):
+    def hash_token(raw_token):
+        """Compute SHA-256 hex digest of a raw token string."""
+        if not raw_token:
+            return ""
+        return hashlib.sha256(raw_token.strip().encode('utf-8')).hexdigest()
+
+    @staticmethod
+    def create(user_id, duration_hours=24, label="Hospital Emergency Link"):
         """
-        Generate a cryptographically secure, unguessable emergency token with an expiration time.
+        Generate a cryptographically secure token, store only its SHA-256 hash,
+        and return (raw_token, token_dict).
         """
         db = get_db()
-        token = secrets.token_urlsafe(24)
+        # 32 bytes URL-safe random string (43+ characters)
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = TokenModel.hash_token(raw_token)
+        token_prefix = raw_token[:8]
         
-        # Calculate expiration timestamp in UTC/standard ISO format
+        # Calculate expiration timestamp in standard format
         expires_at = (datetime.now() + timedelta(hours=float(duration_hours))).strftime('%Y-%m-%d %H:%M:%S')
 
         cursor = db.execute("""
-            INSERT INTO emergency_tokens (user_id, token, label, expires_at)
-            VALUES (?, ?, ?, ?)
-        """, (user_id, token, label.strip() or "Emergency Link", expires_at))
+            INSERT INTO emergency_tokens (
+                user_id, token_hash, token_prefix, label, expires_at,
+                is_active, access_count
+            ) VALUES (?, ?, ?, ?, ?, 1, 0)
+        """, (user_id, token_hash, token_prefix, label.strip() or "Emergency Link", expires_at))
         db.commit()
 
-        return TokenModel.get_by_id(cursor.lastrowid)
+        token_record = TokenModel.get_by_id(cursor.lastrowid)
+        return raw_token, token_record
 
     @staticmethod
     def get_by_id(token_id):
-        """Fetch token by ID."""
+        """Fetch token record by internal ID."""
         db = get_db()
         return db.execute(
             "SELECT * FROM emergency_tokens WHERE id = ?",
@@ -34,26 +52,56 @@ class TokenModel:
         ).fetchone()
 
     @staticmethod
-    def get_by_token(token_str):
-        """Fetch token by token string."""
+    def get_by_raw_token(raw_token):
+        """
+        Look up a token by hashing the incoming raw token and querying token_hash.
+        Also supports legacy unhashed tokens for backward compatibility during upgrades.
+        """
         db = get_db()
-        return db.execute(
-            "SELECT * FROM emergency_tokens WHERE token = ?",
-            (token_str.strip(),)
+        token_hash = TokenModel.hash_token(raw_token)
+        
+        # 1. Primary lookup by SHA-256 hash
+        row = db.execute(
+            "SELECT * FROM emergency_tokens WHERE token_hash = ?",
+            (token_hash,)
         ).fetchone()
+        if row:
+            return row
+
+        # 2. Fallback check for legacy unhashed rows if column exists
+        try:
+            return db.execute(
+                "SELECT * FROM emergency_tokens WHERE token = ?",
+                (raw_token.strip(),)
+            ).fetchone()
+        except Exception:
+            return None
 
     @staticmethod
-    def validate_token(token_str):
+    def validate_token(raw_token):
         """
         Validates token status.
         Returns (token_row, status_code) where status_code is one of:
         'VALID', 'EXPIRED', 'REVOKED', 'INVALID'
+        If VALID, automatically increments access_count and updates last_accessed_at.
         """
-        token = TokenModel.get_by_token(token_str)
+        token = TokenModel.get_by_raw_token(raw_token)
         if not token:
             return None, "INVALID"
 
-        if token['is_revoked']:
+        # Check if revoked (is_active == 0 or revoked_at set or legacy is_revoked == 1)
+        is_revoked = False
+        try:
+            if 'is_active' in token.keys() and token['is_active'] == 0:
+                is_revoked = True
+            elif 'revoked_at' in token.keys() and token['revoked_at'] is not None:
+                is_revoked = True
+            elif 'is_revoked' in token.keys() and token['is_revoked'] == 1:
+                is_revoked = True
+        except Exception:
+            pass
+
+        if is_revoked:
             return token, "REVOKED"
 
         # Check expiration
@@ -64,11 +112,28 @@ class TokenModel:
         except Exception:
             pass
 
+        # Update access count & last accessed timestamp
+        db = get_db()
+        try:
+            db.execute("""
+                UPDATE emergency_tokens
+                SET access_count = COALESCE(access_count, 0) + 1,
+                    last_accessed_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (token['id'],))
+            db.commit()
+            # Reload updated record
+            token = TokenModel.get_by_id(token['id'])
+        except Exception:
+            pass
+
         return token, "VALID"
 
     @staticmethod
     def get_by_user_id(user_id):
-        """Fetch all emergency tokens generated by a patient."""
+        """
+        Fetch all emergency tokens generated by a patient, with computed live status.
+        """
         db = get_db()
         rows = db.execute("""
             SELECT * FROM emergency_tokens
@@ -76,7 +141,6 @@ class TokenModel:
             ORDER BY created_at DESC
         """, (user_id,)).fetchall()
 
-        # Augment with live status indicator for easy template rendering
         token_list = []
         now = datetime.now()
         for r in rows:
@@ -86,21 +150,55 @@ class TokenModel:
                 token_dict['is_expired'] = (now > exp)
             except Exception:
                 token_dict['is_expired'] = False
+
+            # Normalize revocation flag
+            is_rev = False
+            if token_dict.get('is_active') == 0 or token_dict.get('revoked_at') is not None or token_dict.get('is_revoked') == 1:
+                is_rev = True
+            token_dict['is_revoked_status'] = is_rev
+
+            if is_rev:
+                token_dict['status_text'] = 'Revoked'
+            elif token_dict['is_expired']:
+                token_dict['status_text'] = 'Expired'
+            else:
+                token_dict['status_text'] = 'Active'
+
             token_list.append(token_dict)
 
         return token_list
 
     @staticmethod
+    def get_active_token(user_id):
+        """
+        Find the current active, unexpired emergency token for a patient (if any).
+        """
+        tokens = TokenModel.get_by_user_id(user_id)
+        for t in tokens:
+            if t['status_text'] == 'Active':
+                return t
+        return None
+
+    @staticmethod
     def revoke(token_id, user_id):
         """
-        Revoke an active emergency token.
-        Ensures users can only revoke their own tokens.
+        Revoke an active emergency token immediately.
+        Ensures patients can only revoke their own tokens.
         """
         db = get_db()
-        cursor = db.execute("""
-            UPDATE emergency_tokens
-            SET is_revoked = 1
-            WHERE id = ? AND user_id = ?
-        """, (token_id, user_id))
-        db.commit()
-        return cursor.rowcount > 0
+        try:
+            cursor = db.execute("""
+                UPDATE emergency_tokens
+                SET is_active = 0,
+                    revoked_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ?
+            """, (token_id, user_id))
+            # Also set legacy column if present
+            try:
+                db.execute("UPDATE emergency_tokens SET is_revoked = 1 WHERE id = ? AND user_id = ?", (token_id, user_id))
+            except Exception:
+                pass
+            db.commit()
+            return cursor.rowcount > 0
+        except Exception:
+            return False
