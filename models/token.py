@@ -31,12 +31,22 @@ class TokenModel:
         # Calculate expiration timestamp in standard format
         expires_at = (datetime.now() + timedelta(hours=float(duration_hours))).strftime('%Y-%m-%d %H:%M:%S')
 
-        cursor = db.execute("""
-            INSERT INTO emergency_tokens (
-                user_id, token_hash, token_prefix, label, expires_at,
-                is_active, access_count
-            ) VALUES (?, ?, ?, ?, ?, 1, 0)
-        """, (user_id, token_hash, token_prefix, label.strip() or "Emergency Link", expires_at))
+        # Check if legacy 'token' column exists in emergency_tokens
+        cols = [r['name'] for r in db.execute("PRAGMA table_info(emergency_tokens)").fetchall()]
+        if 'token' in cols:
+            cursor = db.execute("""
+                INSERT INTO emergency_tokens (
+                    user_id, token, token_hash, token_prefix, label, expires_at,
+                    is_active, access_count
+                ) VALUES (?, ?, ?, ?, ?, ?, 1, 0)
+            """, (user_id, raw_token, token_hash, token_prefix, label.strip() or "Emergency Link", expires_at))
+        else:
+            cursor = db.execute("""
+                INSERT INTO emergency_tokens (
+                    user_id, token_hash, token_prefix, label, expires_at,
+                    is_active, access_count
+                ) VALUES (?, ?, ?, ?, ?, 1, 0)
+            """, (user_id, token_hash, token_prefix, label.strip() or "Emergency Link", expires_at))
         db.commit()
 
         token_record = TokenModel.get_by_id(cursor.lastrowid)
